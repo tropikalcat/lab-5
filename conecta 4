@@ -266,7 +266,7 @@ public class Main{
         }
         // Métodos Extras //
         public boolean makeMove(int z){
-            if(z < 0 || z > 6){
+            if(z < 0 || z > 7){
                 return false;
             }
             for(int i = 5; i >= 0; i--){
