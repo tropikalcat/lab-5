@@ -393,12 +393,12 @@ public class Main{
                         System.out.println("---------------");
 
                         if (result.equals("draw")) {
-                            this.status = "DRAW";
+                            this.status = "draw";
                             System.out.println("Empate");
                             return "";
                         } 
                         else{
-                            this.status = "VICTORY";
+                            this.status = "victory";
                             if(result.equals("X")){
                                 this.winnerPlayer = playerNameA + "X";
                                 System.out.println("Ganó " + this.winnerPlayer);
