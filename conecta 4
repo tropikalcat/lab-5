@@ -1,0 +1,426 @@
+import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class Main{
+    static class BST<K extends Comparable<K>, V> {
+        private static class Node<K, V> {
+            K key;
+            V value;
+            Node<K, V> izquierda, derecha;
+            Node(K key, V value){
+                this.key = key;
+                this.value = value;
+            }
+        }
+        private Node<K, V> root;
+
+        public void put(K key, V value){
+            root = put(root, key, value);
+        }
+        private Node<K, V> put(Node<K, V> node, K key, V value){
+            if(node == null){
+                return new Node<K, V>(key, value);
+            }
+            int comp = key.compareTo(node.key);
+            if(comp < 0){
+                node.izquierda = put(node.izquierda, key, value);
+            } else if(comp > 0){
+                node.derecha = put(node.derecha, key, value);
+            } else {
+                node.value = value;
+            }
+            return node;
+        }
+        public V get(K key){
+            Node<K, V> node = root;
+            while(node != null){
+                int comp = key.compareTo(node.key);
+                if(comp < 0){
+                    node = node.izquierda;
+                } else if(comp > 0){
+                    node = node.derecha;
+                } else {
+                    return node.value;
+                }
+            }
+            return null;
+        }
+        public V findSucesor(K key){
+            Node<K, V> actual = root;
+            Node<K, V> findSucesor = null;
+
+            while (actual != null) {
+                int comp = key.compareTo(actual.key);
+                if (comp < 0) {
+                    findSucesor = actual;
+                    actual = actual.izquierda;
+                } 
+                else{
+                    actual = actual.derecha;
+                }
+            }
+
+            if (findSucesor != null) {
+               return findSucesor.value;
+            } 
+            else{
+               return null;
+            }
+        }
+    }
+    
+    
+    static class HashST<K, V> {
+        private static class Entrada<K, V> {
+            K key;
+            V value;
+
+            Entrada(K key, V value) {
+                this.key = key;
+                this.value = value;
+            }
+        }
+
+        private LinkedList<Entrada<K, V>>[] tabla;
+        private int capacidad = 16;
+
+        @SuppressWarnings("unchecked")
+        public HashST() {
+            tabla = new LinkedList[capacidad];
+            for (int i = 0; i < capacidad; i++) {
+                tabla[i] = new LinkedList<>();
+            }
+        }
+
+        private int hash(K key) {
+            return (key.hashCode() & 0x7fffffff) % capacidad;
+        }
+
+        public void put(K key, V value) {
+            int indice = hash(key);
+            for (Entrada<K, V> entrada : tabla[indice]) {
+                if (entrada.key.equals(key)) {
+                    entrada.value = value;
+                    return;
+                }
+            }
+            tabla[indice].add(new Entrada<>(key, value));
+        }
+        public V get(K key) {
+            int indice = hash(key);
+            for (Entrada<K, V> entrada : tabla[indice]) {
+                if (entrada.key.equals(key)) {
+                    return entrada.value;
+                }
+            }
+            return null;
+        }
+        public boolean contains(K key) {
+            return get(key) != null;
+        }
+    }
+    
+    static class Player {
+        private String playerName;
+        private int wins;
+        private int draws;
+        private int losses;
+
+        public Player(String playerName){
+            this.playerName = playerName;
+            this.wins = 0;
+            this.draws = 0;
+            this.losses = 0;
+        }
+        // Getters //
+        public String getPlayerName(){
+            return playerName;
+        }
+        public int getWins(){
+            return wins;
+        }
+        public int getDraws(){
+            return draws;
+        }
+        public int getLosses(){
+            return losses;
+        }
+        // Setters //
+        public void setPlayerName(String playerName){
+            this.playerName = playerName;
+        }
+        public void setWins(int wins){
+            this.wins = wins;
+        }
+        public void setDraws(int draws){
+            this.draws = draws;
+        }
+        public void setLosses(int losses){
+            this.losses = losses;
+        }
+        // Métodos Extras //
+        public void addWin(){
+            wins++;
+        }
+        public void addDraw(){
+            draws++;
+        }
+        public void addLoss(){
+            losses++;
+        }
+        public double winRate(){
+            int partidasTotales = wins + draws + losses;
+            if(partidasTotales == 0) return 0;
+            double winRate = (wins * 100) / partidasTotales;
+            winRate = winRate / 100;
+            return winRate;
+        }
+    }
+    
+    
+    static class Scoreboard {
+        private BST<Integer, String> winTree;
+        private HashST<String, Player> players;
+        private int playedGames;
+
+        public Scoreboard() {
+            this.winTree = new BST<>();
+            this.players = new HashST<>();
+            this.playedGames = 0;
+        }
+        // Métodos Extras //
+        public void addGameResult(String winnerPlayerGame, String looserPlayerName, boolean draw){
+            Player winner = players.get(winnerPlayerGame);
+            Player loser = players.get(looserPlayerName);
+
+            if(draw){
+                winner.addDraw();
+                loser.addDraw();
+            } else {
+                winner.addWin();
+                loser.addLoss();
+            }
+
+            winTree.put(winner.getWins(), winnerPlayerGame);
+            playedGames++;
+        }
+        public void registerPlayer(String playerName){
+            if(!players.contains(playerName)){
+                players.put(playerName, new Player(playerName));
+            }
+        }
+        public boolean checkPlayer(String playerName){
+            return players.contains(playerName);
+        }
+        public Player[] winRange(int lo, int hi){
+            ArrayList<Player> jugadores = new ArrayList<>();
+            for(int i = lo; i <= hi; i++){
+                String playerNameTemp = winTree.get(i);
+                if(playerNameTemp != null && players.contains(playerNameTemp)){
+                    jugadores.add(players.get(playerNameTemp));
+                }
+            }
+            return jugadores.toArray(new Player[0]);
+        }
+        public Player[] winSuccessor(int wins){
+            String playerName = winTree.findSucesor(wins);
+            
+            if(playerName == null || !players.contains(playerName)){
+                return new Player [0];
+            }
+            
+            Player a = players.get(playerName);
+            int victories = a.getWins();
+            
+            ArrayList<Player> list = new ArrayList<>();
+            
+            for(int i=0; i <= victories + 1; i++){
+                String name = winTree.get(i);
+                
+                if(name != null && players.contains(name)){
+                    Player p = players.get(name);
+                    if(p.getWins() == victories){
+                        list.add(p);
+                    }
+                }
+            }
+            
+            return list.toArray(new Player[0]);
+        }
+    }
+    
+    
+    static class ConnectFour {
+        private char[][] grid;
+        private char currentSymbol;
+
+        public ConnectFour(){
+            grid = new char[6][7];
+            for(int i = 0; i < 6; i++){
+                for(int j = 0; j < 7; j++){
+                    grid[i][j] = ' ';
+                }
+            }
+                this.currentSymbol = 'X';
+        }
+        // Métodos Extras //
+        public boolean makeMove(int z){
+            if(z < 0 || z > 6){
+                return false;
+            }
+            for(int i = 5; i >= 0; i--){
+                if(grid[i][z] == ' '){
+                    grid[i][z] = currentSymbol;
+                    if(currentSymbol == 'X'){
+                        currentSymbol = 'O';
+                    } else {
+                        currentSymbol = 'X';
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+        public String isGameOver(){
+            
+            for (int fila = 0; fila < 6; fila++){
+                for (int columna = 0; columna < 7; columna++){
+                    char symbol = grid[fila][columna];
+                    if (symbol == ' '){
+                       continue;
+                    };
+            
+                    if (columna <= 3 && symbol == grid[fila][columna+1] && symbol == grid[fila][columna+2] && symbol == grid[fila][columna+3]){
+                       if(symbol == 'X'){
+                        return "X";
+                    }
+                    return "O";
+                    }
+            
+                    if (fila <= 2 && symbol == grid[fila+1][columna] && symbol == grid[fila+2][columna] && symbol == grid[fila+3][columna]){
+                       if(symbol == 'X'){
+                        return "X";
+                    }
+                    return "O";
+                    }
+    
+                    if (fila <= 2 && columna <= 3 && symbol == grid[fila+1][columna+1] && symbol == grid[fila+2][columna+2] && symbol == grid[fila+3][columna+3]){
+                       if(symbol == 'X'){
+                        return "X";
+                    }
+                    return "O";
+                    }
+            
+                    if (fila >= 3 && columna <= 3 && symbol == grid[fila-1][columna+1] && symbol == grid[fila-2][columna+2] && symbol == grid[fila-3][columna+3]){
+                       if(symbol == 'X'){
+                        return "X";
+                    }
+                    return "O";
+                    }
+                }
+            }
+    
+            boolean full = true;
+            for (int col = 0; col < 7; col++) {
+                if (grid[0][col] == ' ') {
+                   return "in_progress";
+                }
+            }
+            return "draw";
+        }
+    }
+
+    static class Game{
+        private String status;
+        private String winnerPlayer;
+        private String playerNameA;
+        private String playerNameB;
+        private ConnectFour connectFour;
+
+        public Game(String playerNameA, String playerNameB) {
+            this.status = "in_progress";
+            this.playerNameA = playerNameA;
+            this.playerNameB = playerNameB;
+            this.winnerPlayer = "";
+            this.connectFour = new ConnectFour();
+        }
+
+        public String play() {
+            Scanner scanner = new Scanner(System.in);
+
+            while (true){
+                System.out.println("Conecta 4:");
+                System.out.println("\n 0 1 2 3 4 5 6");
+                System.out.println("---------------");
+                for (int i = 0; i < 6; i++) {
+                    for (int j = 0; j < 7; j++) {
+                        System.out.print("|" + connectFour.grid[i][j]);
+                    }
+                    System.out.println("|");
+                }
+                System.out.println("---------------");
+
+                String currentPlayer = playerNameB;
+                if(connectFour.currentSymbol == 'X'){
+                    currentPlayer = playerNameA;
+                } 
+                
+                System.out.print(currentPlayer + connectFour.currentSymbol + ", elige columna (0-6): ");
+
+                try {
+                    int col = scanner.nextInt();
+                    if (col < 0 || col > 6){
+                        System.out.println("======Inválido. Intenta de nuevo.=======");
+                        continue;
+                    }
+
+                    if (!connectFour.makeMove(col)){
+                        System.out.println("columna llena");
+                        continue;
+                    }
+
+                    String result = connectFour.isGameOver();
+                    if (!result.equals("in_progress")){
+                        System.out.println(" 0 1 2 3 4 5 6");
+                        System.out.println("---------------");
+                        for (int i = 0; i < 6; i++) {
+                            for (int j = 0; j < 7; j++) {
+                                System.out.print("|" + connectFour.grid[i][j]);
+                            }
+                            System.out.println("|");
+                        }
+                        System.out.println("---------------");
+
+                        if (result.equals("draw")) {
+                            this.status = "DRAW";
+                            System.out.println("Empate");
+                            return "";
+                        } 
+                        else{
+                            this.status = "VICTORY";
+                            if(result.equals("X")){
+                                this.winnerPlayer = playerNameA + "X";
+                                System.out.println("Ganó " + this.winnerPlayer);
+                            }
+                            else if(result.equals("O")){
+                                this.winnerPlayer = playerNameB + "O";
+                                System.out.println("Ganó " + this.winnerPlayer);
+                            }
+                            
+                            return this.winnerPlayer;
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("Entrada inválida");
+                    scanner.next();
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        Game game = new Game("Jugador", "Jugador");
+        game.play();
+    }
+}
