@@ -283,52 +283,45 @@ public class Main{
             return false;
         }
         public String isGameOver(){
-            
-            for (int fila = 0; fila < 6; fila++){
-                for (int columna = 0; columna < 7; columna++){
-                    char symbol = grid[fila][columna];
-                    if (symbol == ' '){
-                       continue;
-                    };
-            
-                    if (columna <= 3 && symbol == grid[fila][columna+1] && symbol == grid[fila][columna+2] && symbol == grid[fila][columna+3]){
-                       if(symbol == 'X'){
-                        return "X";
-                    }
-                    return "O";
-                    }
-            
-                    if (fila <= 2 && symbol == grid[fila+1][columna] && symbol == grid[fila+2][columna] && symbol == grid[fila+3][columna]){
-                       if(symbol == 'X'){
-                        return "X";
-                    }
-                    return "O";
-                    }
-    
-                    if (fila <= 2 && columna <= 3 && symbol == grid[fila+1][columna+1] && symbol == grid[fila+2][columna+2] && symbol == grid[fila+3][columna+3]){
-                       if(symbol == 'X'){
-                        return "X";
-                    }
-                    return "O";
-                    }
-            
-                    if (fila >= 3 && columna <= 3 && symbol == grid[fila-1][columna+1] && symbol == grid[fila-2][columna+2] && symbol == grid[fila-3][columna+3]){
-                       if(symbol == 'X'){
-                        return "X";
-                    }
-                    return "O";
-                    }
-                }
+    for (int fila = 0; fila < 6; fila++){
+        for (int columna = 0; columna <= 3; columna++){
+            char simbolo = grid[fila][columna];
+            if (simbolo != ' ' && simbolo == grid[fila][columna + 1] && simbolo == grid[fila][columna + 2] && simbolo == grid[fila][columna + 3]){
+                return simbolo + "";
             }
-    
-            boolean full = true;
-            for (int col = 0; col < 7; col++) {
-                if (grid[0][col] == ' ') {
-                   return "in_progress";
-                }
-            }
-            return "draw";
         }
+    }
+    for (int columna = 0; columna < 7; columna++) {
+        for (int fila = 0; fila <= 2; fila++) {
+            char simbolo = grid[fila][columna];
+            if (simbolo != ' ' && simbolo == grid[fila + 1][columna] && simbolo == grid[fila + 2][columna] && simbolo == grid[fila + 3][columna]){
+                return simbolo + "";
+            }
+        }
+    }
+    for (int fila = 0; fila <= 2; fila++){
+        for (int columna = 0; columna <= 3; columna++){
+            char simbolo = grid[fila][columna];
+            if (simbolo != ' ' && simbolo == grid[fila + 1][columna + 1] && simbolo == grid[fila + 2][columna + 2] && simbolo == grid[fila + 3][columna + 3]){
+                return simbolo + "";
+            }
+        }
+    }
+    for (int fila = 3; fila < 6; fila++){
+        for (int columna = 0; columna <= 3; columna++){
+            char simbolo = grid[fila][columna];
+            if (simbolo != ' ' && simbolo == grid[fila - 1][columna + 1] && simbolo == grid[fila - 2][columna + 2] && simbolo == grid[fila - 3][columna + 3]){
+                return simbolo + "";
+            }
+        }
+    }
+    for (int columna = 0; columna < 7; columna++){
+        if (grid[0][columna] == ' '){
+            return "in_progress";
+        }
+    }
+    return "draw";
+    }
     }
 
     static class Game{
