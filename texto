@@ -1,0 +1,686 @@
+\documentclass[12pt]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amssymb,amsmath,amsthm,amsfonts}
+\usepackage{calc}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{gensymb}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{vmargin}
+\setmarginsrb{3 cm}{1.0 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{pst-all}
+\usepackage{pstricks}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    keywordstyle=\color{codepurple},
+    breaklines=true,
+    basicstyle=\ttfamily\footnotesize,
+    numbers=left,
+    showstringspaces=false,
+}
+
+\title{Laboratorio 5}					% Titulo
+\author{Bastián Ampuero \linebreak
+Catalina Pérez\linebreak
+Benjamín Zúñiga\linebreak
+\newline
+\bttext{Profesor: \linebreak Marcos Fantoval}}
+\date{28/06/2025}% Fecha
+
+\makeatletter
+\let\thetitle\@title
+\let\theauthor\@author
+\let\thedate\@date
+\makeatother
+
+\pagestyle{fancy}
+\fancyhf{}
+\usepackage{subfigure}
+\usepackage{gensymb}
+\cfoot{\thepage}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{titlepage}
+	\centering
+    \vspace*{0.0 cm}
+    \includegraphics[scale = 0.5]{unnamed.png}\\[1.0 cm]	% Logo Universidad
+    \textsc{\LARGE Universidad Diego Portales}\\[0.2 cm]	% Nombre Universidad
+	\textsc{\large ESCUELA DE INFORMÁTICA \& TELECOMUNICACIONES}\\[2 cm]		% Nombre Curso
+	\textsc{\LARGE ESTRUCTURAS DE DATOS \& ANÁLISIS DE ALGORITMOS}\\[1.0 cm]	% Nombre Universidad
+	\rule{\linewidth}{0.2 mm} \\[0.4 cm]
+	{ \huge \bfseries \thetitle }\\
+	\rule{\linewidth}{0.2 mm} \\[1.5 cm]
+	
+	\begin{minipage}{1.0\textwidth}
+		\begin{center} \large
+			\emph{Autores:\par}
+			\theauthor\linebreak
+			\end{center}
+	\end{minipage}\\[1.5 cm]	
+	{\large \thedate}\\[1 cm]
+ 
+	%\vfill
+	
+\end{titlepage}
+
+\pagebreak
+\tableofcontents
+\pagebreak
+
+\section{Introducción}%%%  casi listo
+El presente informe tiene como finalidad el desarrollo del juego \texttt{Conecta 4} entre dos jugadores (jugador X y jugador O), ofreciendo una experiencia interactiva por consola, el cual consiste en colocar fichas alternadamente en un tablero de 6 filas y 7 columnas, hasta que uno logre conectar cuatro en linea, ya sea de forma horizontal, vertical o diagonal.
+
+El objetivo central de este laboratorio es integrar estructuras de datos, especificamente un árbol binario de búsqueda (BST) y una tabla hash (HashST). Estas estructuras se integran a través de las clases \texttt{Player}, \texttt{ConectFour}, \texttt{ScoreBoard} y \texttt{Game}, que en conjunto permiten manejar la lógica del juego. La clase \texttt{Player} representa a un jugador con sus derrotas, empates y victorias; \texttt{ConectFour}, contiene la lógica y representación del tablero; \texttt{ScoreBoard}, registra el resultado de las partidas utilizando las estructuras BST y HashST; y \texttt{Game}, gestiona el desarrollo de una partida.
+
+Además de la implementación, este laboratorio requiere una parte analítica. Se realiza un análisis asintótico del rendimiento de los métodos más relevantes, lo que permite identificar cuán eficiente son las operaciones implementadas. También se abordan los principales desafíos durante el desarrollo, así como una reflexión sobre las ventajes y desvetajas del sistema propuesto. Finalmente, se presenta una extensión para dar soporte a torneos entre jugadores.
+
+\pagebreak
+
+
+
+\section{Implementación}
+\subsection{BST Y HashST}
+\begin{lstlisting}[language=Java,style=mystyle] 
+ static class BST<K extends Comparable<K>, V>{
+    private static class Node<K, V>{
+        K key;
+        V value;
+        Node<K, V> izquierda, derecha;
+        Node(K key, V value){
+            this.key = key;
+            this.value = value;
+        }
+    }
+    private Node<K, V> root;
+
+    public void put(K key, V value){
+        root = put(root, key, value);
+    }
+    private Node<K, V> put(Node<K, V> node, K key, V value){
+        if(node == null){
+            return new Node<K, V>(key, value);
+        }
+        int comp = key.compareTo(node.key);
+        if(comp < 0){
+            node.izquierda = put(node.izquierda, key, value);
+        }
+        else if(comp > 0){
+            node.derecha = put(node.derecha, key, value);
+        }
+        else{
+            node.value = value;
+        }
+        return node;
+    }
+    public V get(K key){
+        Node<K, V> node = root;
+        while(node != null){
+            int comp = key.compareTo(node.key);
+            if(comp < 0){
+                node = node.izquierda;
+            }
+            else if(comp > 0){
+                node = node.derecha;
+            }
+            else{
+                return node.value;
+            }
+        }
+        return null;
+    }
+    public V findSucesor(K key){
+        Node<K, V> actual = root;
+        Node<K, V> findSucesor = null;
+
+        while (actual != null){
+            int comp = key.compareTo(actual.key);
+            if (comp < 0){
+                findSucesor = actual;
+                actual = actual.izquierda;
+            } 
+            else{
+                actual = actual.derecha;
+            }
+        }
+
+        if (findSucesor != null){
+            return findSucesor.value;
+        } 
+        else{
+            return null;
+        }
+    }
+}
+    
+    
+ static class HashST<K, V>{
+    private static class Entrada<K, V>{
+        K key;
+        V value;
+
+        Entrada(K key, V value){
+            this.key = key;
+            this.value = value;
+        }
+    }
+
+    private LinkedList<Entrada<K, V>>[] tabla;
+    private int capacidad = 16;
+
+    @SuppressWarnings("unchecked")
+    public HashST(){
+        tabla = new LinkedList[capacidad];
+        for (int i = 0; i < capacidad; i++){
+            tabla[i] = new LinkedList<>();
+        }
+    }
+
+    private int hash(K key){
+        return (key.hashCode() & 0x7fffffff) % capacidad;
+    }
+
+    public void put(K key, V value){
+        int indice = hash(key);
+        for (Entrada<K, V> entrada : tabla[indice]){
+            if (entrada.key.equals(key)){
+                entrada.value = value;
+                return;
+            }
+        }
+        tabla[indice].add(new Entrada<>(key, value));
+    }
+    public V get(K key){
+        int indice = hash(key);
+        for (Entrada<K, V> entrada : tabla[indice]){
+            if (entrada.key.equals(key)){
+                return entrada.value;
+            }
+        }
+        return null;
+    }
+    public boolean contains(K key){
+        return get(key) != null;
+    }
+}
+\end{lstlisting}
+
+\pagebreak
+\subsection{Clase Player}
+\begin{lstlisting}[language=Java,style=mystyle] 
+static class Player{
+    private String playerName;
+    private int wins;
+    private int draws;
+    private int losses;
+
+    public Player(String playerName){
+        this.playerName = playerName;
+        this.wins = 0;
+        this.draws = 0;
+        this.losses = 0;
+    }
+    === Getters ===
+    public String getPlayerName(){
+        return playerName;
+    }
+    public int getWins(){
+        return wins;
+    }
+    public int getDraws(){
+        return draws;
+    }
+    public int getLosses(){
+        return losses;
+    }
+    === Setters ===
+    public void setPlayerName(String playerName){
+        this.playerName = playerName;
+    }
+    public void setWins(int wins){
+        this.wins = wins;
+    }
+    public void setDraws(int draws){
+        this.draws = draws;
+    }
+    public void setLosses(int losses){
+        this.losses = losses;
+    }
+    === Métodos ===
+    public void addWin(){
+        wins++;
+    }
+    public void addDraw(){
+        draws++;
+    }
+    public void addLoss(){
+        losses++;
+    }
+    public double winRate(){
+        int partidasTotales = wins + draws + losses;
+        if(partidasTotales == 0){
+           return 0;
+        } 
+        double winRate = (wins * 100) / partidasTotales;
+        winRate = winRate / 100;
+        return winRate;
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Explicación clase Player}
+La clase \texttt{Player} es una pieza fundamental, porque representa a cada jugador del juego "Conecta 4". Esta clase contiene el nombre del jugador, y el número de partidas ganadas, perdidas y empatadas. Además, proporciona métodos para actualizar las estadísticas de las partidas y para calcular el porcentaje de victorias del jugador a lo largo del juego. Gracias a esta implementación se puede llevar el seguimiento de cada uno de los jugadores, lo cual es necesario para generar estadísticas. 
+
+Los atributos utilizados son:
+\begin{itemize}
+    \item \textbf{PlayerName}: Identificador único para el jugador.
+    \item \textbf{Wins}: Número de partidas ganadas por el jugador.
+    \item \textbf{Draws}: Número de partidas empatadas.
+    \item \textbf{Losses}: Número de partidas perdidas.
+\end{itemize}
+
+Los métodos utilizados son:
+\begin{itemize}
+    \item \textbf{AddWin()}: Incrementa el número de partidas ganadas por el jugador.
+    \item \textbf{AddDraw()}: Incrementa el número de partidas empatadas por el jugador.
+    \item \textbf{AddLoss()}: Incrementa el número de partidas perdidas por el jugador.
+    \item \textbf{WinRate()}: Retorna el porcentaje (valor decimal entre 0 y 1) de victorias del jugador entre todas las partidas ganadas. Si el jugador no participa en las partidas, retorna 0.
+    \item \textbf{Getters y Setters}: Permiten retornar y modificar los atributos. 
+\end{itemize}
+\pagebreak
+
+\subsection{Clase ScoreBoard}
+\begin{lstlisting}[language=Java,style=mystyle] 
+ static class Scoreboard{
+    private BST<Integer, String> winTree;
+    private HashST<String, Player> players;
+    private int playedGames;
+
+    public Scoreboard(){
+        this.winTree = new BST<>();
+        this.players = new HashST<>();
+        this.playedGames = 0;
+    }
+    // Métodos Extras //
+    public void addGameResult(String winnerPlayerGame, String looserPlayerName, boolean draw){
+        Player winner = players.get(winnerPlayerGame);
+        Player loser = players.get(looserPlayerName);
+
+        if(draw){
+            winner.addDraw();
+            loser.addDraw();
+        }
+        else{
+            winner.addWin();
+            loser.addLoss();
+        }
+
+        winTree.put(winner.getWins(), winnerPlayerGame);
+        playedGames++;
+    }
+    public void registerPlayer(String playerName){
+        if(!players.contains(playerName)){
+            players.put(playerName, new Player(playerName));
+        }
+    }
+    public boolean checkPlayer(String playerName){
+        return players.contains(playerName);
+    }
+    public Player[] winRange(int lo, int hi){
+        ArrayList<Player> jugadores = new ArrayList<>();
+            for(int i = lo; i <= hi; i++){
+                String playerNameTemp = winTree.get(i);
+                if(playerNameTemp != null && players.contains(playerNameTemp)){
+                    jugadores.add(players.get(playerNameTemp));
+                }
+            }
+            return jugadores.toArray(new Player[0]);
+        }
+     public Player[] winSuccessor(int wins){
+        String playerName = winTree.findSucesor(wins);
+            
+        if(playerName == null || !players.contains(playerName)){
+            return new Player [0];
+        }
+            
+        Player a = players.get(playerName);
+        int victories = a.getWins();
+            
+        ArrayList<Player> list = new ArrayList<>();
+            
+        for(int i=0; i <= victories + 1; i++){
+            String name = winTree.get(i);
+                
+            if(name != null && players.contains(name)){
+                Player p = players.get(name);
+                if(p.getWins() == victories){
+                    list.add(p);
+                }
+            }
+        }
+            
+        return list.toArray(new Player[0]);
+    }
+}
+\end{lstlisting}
+\pagebreak
+
+\subsubsection{Explicación clase ScoreBoard}
+Esta clase es la pieza central del sistema, ya que su propósito es gestionar todos los jugadores registrados y los resultados de las partidas. Se utilizan dos estructuras de datos  como una tabla de hash (HashST), que permite acceder a cualquier jugador por el nombre, y un árbol binario de búsqueda (BST), que organiza a los jugadores por la cantidad de partidas ganadas. Esto hace posible realizar búsquedas y registros, incluso cuando el número de jugadores aumenta.
+
+Los atributos utilizados son: 
+\begin{itemize}
+    \item \textbf{WinTree (BST$<$int, String$>$)}: Ordena a los jugadores por su número de victorias, siendo el número de jugadores la \texttt{llave} y el nombre del jugador (playerName) el \texttt{valor}.
+    \item \textbf{Players (HashST$<$String, Player$>$)}: Asocia el nombre de cada jugador (playerName) con su respectiva instancia de la clase \texttt{Player}.
+    \item \textbf{PlayedGame}: Es un contador que almacena la cantidad total de partidas jugadas registradas en el sistema, y se incrementa cada vez que se agrega un nuevo resultado de partida.
+
+
+\end{itemize}
+
+Los métodos utilizados son:
+\begin{itemize}
+    \item \textbf{AddGameResult(String winnerPlayerName, String looserPlayerName, boolean draw)}: Registra el resultado de un partida entre jugadores, si es empate (draw), ambos suman un empate, y si no es empate, el jugador ganador suma una victoria y el perdedor una derrota. Además, incrementa el contador \texttt{playedGames}.
+    \item \textbf{RegisterPlayer(String playerName)}: Registra un nuevo jugador si aun no está en el sistema, y lo agrega a la tabla de hash \texttt{players}. Si el jugador ya existe, no lo registra nuevamente.
+    \item \textbf{CheckPlayer(String playerName)}: Verifica si un jugador con ese nombre está registrado en la tabla de hash \texttt{players}.
+    \item \textbf{WinRange(int lo, int hi)}: Devuelve un arreglo de jugadores cuyo número de victorias es menor o igual que \texttt{lo} y mayor o igual que \texttt{hi}.
+    \item \textbf{WinSuccessor(int wins)}: Retorna un arreglo de jugadores, y busca el sucesor (mayor más cercano) al número de victorias dado. Si no existe un sucesor en el \texttt{winTree}, retorna un arreglo vacío.
+\end{itemize}
+
+\pagebreak
+
+\subsection{Clase ConnectFour}
+\begin{lstlisting}[language=Java,style=mystyle]
+static class ConnectFour{
+    private char[][] grid;
+    private char currentSymbol;
+
+    public ConnectFour(){
+        grid = new char[6][7];
+        for(int i = 0; i < 6; i++){
+            for(int j = 0; j < 7; j++){
+                grid[i][j] = ' ';
+            }
+        }
+        this.currentSymbol = 'X';
+    }
+    // Metodos Extras //
+    public boolean makeMove(int z){
+        if(z < 0 || z > 7){
+            return false;
+        }
+        for(int i = 5; i >= 0; i--){
+            if(grid[i][z] == ' '){
+                grid[i][z] = currentSymbol;
+                if(currentSymbol == 'X'){
+                    currentSymbol = 'O';
+                } 
+                else{
+                    currentSymbol = 'X';
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+    public String isGameOver(){
+    for (int fila = 0; fila < 6; fila++){
+        for (int columna = 0; columna <= 3; columna++){
+            char simbolo = grid[fila][columna];
+            if (simbolo != ' ' && simbolo == grid[fila][columna + 1] && simbolo == grid[fila][columna + 2] && simbolo == grid[fila][columna + 3]){
+                return simbolo + "";
+            }
+        }
+    }
+    for (int columna = 0; columna < 7; columna++) {
+        for (int fila = 0; fila <= 2; fila++) {
+            char simbolo = grid[fila][columna];
+            if (simbolo != ' ' && simbolo == grid[fila + 1][columna] && simbolo == grid[fila + 2][columna] && simbolo == grid[fila + 3][columna]){
+                return simbolo + "";
+            }
+        }
+    }
+    for (int fila = 0; fila <= 2; fila++){
+        for (int columna = 0; columna <= 3; columna++){
+            char simbolo = grid[fila][columna];
+            if (simbolo != ' ' && simbolo == grid[fila + 1][columna + 1] && simbolo == grid[fila + 2][columna + 2] && simbolo == grid[fila + 3][columna + 3]){
+                return simbolo + "";
+            }
+        }
+    }
+    for (int fila = 3; fila < 6; fila++){
+        for (int columna = 0; columna <= 3; columna++){
+            char simbolo = grid[fila][columna];
+            if (simbolo != ' ' && simbolo == grid[fila - 1][columna + 1] && simbolo == grid[fila - 2][columna + 2] && simbolo == grid[fila - 3][columna + 3]){
+                return simbolo + "";
+            }
+        }
+    }
+    for (int columna = 0; columna < 7; columna++){
+        if (grid[0][columna] == ' '){
+            return "in_progress";
+        }
+    }
+    return "draw";
+    }
+}
+\end{lstlisting}
+\pagebreak
+
+\subsubsection{Explicación clase ConnectFour}
+Esta clase es la encargada de mostrar el tablero, validar movimientos, y detectar si el juego ha terminado, ya sea por una victoria o por empate. Gracias a esta clase existe la mecánica del juego \texttt{Conecta 4}.
+
+Los atributos utilizados son:
+\begin{itemize}
+    \item \textbf{Grid (char[6][7])}: Es una matriz de 6 filas y 7 columnas que representa el tablero del juego. Cada casilla contiene un carácter, si está vacía, \texttt{'X'} para el jugador A, y \texttt{'O'} para el jugador B. Además, permite visualizar el estado del tablero en cada momento.
+    \item  \textbf{CurrentSymbol (char)}: Representa el símbolo del jugador actual que tiene valores \texttt{X} y \texttt{O}. Los valores se alternan en cada turno y determina que símbolo se insertará en el tablero al llamar a \texttt{makeMove}.
+
+
+
+\end{itemize}
+
+Los métodos utilizados son:
+\begin{itemize}
+    \item \textbf{ConnectFour()}: Inicializa el tablero (\texttt{grid}) llenando todas las casillas con espacios ('   '), y establece el símbolo actual (currentSymbol) como 'X', ya que el jugador A siempre empieza.
+    \item \textbf{MakeMove(int z)}: Intenta realizar un movimiento en la columna \texttt{z} (de 0 a 7). Entonces, si la columna es válida y tiene un espacio disponible, coloca el símbolo actual en la fila. Luego alterna el símbolo actual, y retorna true si el movimiento es exitoso, y si no false.
+    \item \textbf{IsGameOver()}: Verifica si el juego ha terminado, ya sea por empate o por si el jugador ganó. Si el tablero está lleno y no hay ganador, retorna "draw", y si aun hay espacios y nadie ha ganado, devuelve "in\_progress".
+\end{itemize}
+\pagebreak
+
+\subsection{Clase Game}
+\begin{lstlisting}[language=Java,style=mystyle]
+static class Game{
+    private String status;
+    private String winnerPlayer;
+    private String playerNameA;
+    private String playerNameB;
+    private ConnectFour connectFour;
+
+    public Game(String playerNameA, String playerNameB){
+        this.status = "in_progress";
+        this.playerNameA = playerNameA;
+        this.playerNameB = playerNameB;
+        this.winnerPlayer = "";
+        this.connectFour = new ConnectFour();
+    }
+
+    public String play(){
+        Scanner scanner = new Scanner(System.in);
+
+        while (true){
+            System.out.println("Conecta 4:");
+            System.out.println("\n 0 1 2 3 4 5 6");
+            for (int i = 0; i < 6; i++){
+                for (int j = 0; j < 7; j++){
+                    System.out.print("." + connectFour.grid[i][j]);
+                }
+                System.out.println(".");
+            }
+            System.out.println("---------------");
+
+            String currentPlayer = playerNameB;
+            if(connectFour.currentSymbol == 'X'){
+                currentPlayer = playerNameA;
+            } 
+                
+            System.out.print(currentPlayer + connectFour.currentSymbol + ", elige columna (0-6): ");
+
+            try{
+                int col = scanner.nextInt();
+                if (col < 0 || col > 6){
+                    System.out.println("======Inválido. Intenta de nuevo.=======");
+                    continue;
+                }
+
+                if (!connectFour.makeMove(col)){
+                    System.out.println("columna llena");
+                    continue;
+                }
+
+                String result = connectFour.isGameOver();
+                if (!result.equals("in_progress")){
+                    System.out.println(" 0 1 2 3 4 5 6");
+                    for (int i = 0; i < 6; i++){
+                        for (int j = 0; j < 7; j++){
+                            System.out.print("." + connectFour.grid[i][j]);
+                        }
+                    System.out.println(".");
+                    }
+                System.out.println("---------------");
+
+                if (result.equals("draw")){
+                    this.status = "draw";
+                    System.out.println("Empate");
+                    return "";
+                } 
+                else{
+                    this.status = "victory";
+                    if(result.equals("X")){
+                       this.winnerPlayer = playerNameA + "X";
+                    System.out.println("Ganó " + this.winnerPlayer);
+                    }
+                    else if(result.equals("O")){
+                            this.winnerPlayer = playerNameB + "O";
+                            System.out.println("Ganó " + this.winnerPlayer);
+                    }
+                            
+                    return this.winnerPlayer;
+                }
+                }
+            }catch (Exception e){
+                System.out.println("Entrada inválida");
+                scanner.next();
+            }
+        }
+    }
+}
+
+    public static void main(String[] args){
+      Game game = new Game("JugadorA", "JugadorB");
+      game.play();
+    }
+}
+\end{lstlisting}
+\pagebreak
+
+\subsubsection{Explicación clase Game}
+Esta clase reúne todos los componentes anteriores y controla una partida, gestionando los turnos entre jugadores, mostrando el tablero en cada jugada. Además, se encarga de registrar el resultado, lo cual conecta directamente con la clase \texttt{ScoreBoard}. Gracias a esto la experiencia del juego es fluida.
+
+Los atributos utilizados son:
+\begin{itemize}
+    \item \textbf{Status}: Representa el estado actual de la partida, y puede tomar varios valores: "in\_progress", "victory" y "draw".
+    \item \textbf{WinnerPlayerName}: Nombre del jugador que ganó la partida, y si hay un empate se mantiene vacío ("  ").
+    \item \textbf{PlayerNameA}: Nombre del jugador A, quien siempre empieza la partida, y utiliza el símbolo 'X'.
+    \item \textbf{PlayerNameB}: Nombre del jugador B, quien juega en segundo lugar, y utiliza el símbolo 'O'.
+    \item \textbf{ConnectFour}: Representa el tablero y la lógica del juego.
+
+\end{itemize}
+
+Los métodos utilizados son:
+\begin{itemize}
+    \item \textbf{Game(String playerNameA, String playerNameB)}: Es el constructor que inicializa una nueva partida con los jugadores A y B. El estado (status) del juego comienza como "in\_progress". Además, se crea una nueva instancia de \texttt{ConnectFour}.
+    \item \textbf{Play()}: Ejecuta una partida en un ciclo completo. También, muestra el tablero y solicita al jugador actual que ingrese la columna (de 0 a 6) donde quiera jugar. Asimismo, llama el método \texttt{makeMove()} para aplicar un movimiento, y utiliza \texttt{isGameOver()} para verificar si la partida ha terminado.
+
+Si alguien gana, se actualiza el estado (status) a "victory", y guarda el nombre en \texttt{winnerPlayer}, pero si hay un empate, el estado se actualiza a "draw", y deja \texttt{winnerPlayer} vacío.
+\end{itemize}
+
+\pagebreak
+
+\section{Análisis}
+\subsection{Análisis asintótico}
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Clase& Método& Big-O\\
+        \hline
+        ScoreBoard& addGameResult& O(h)\\
+        \hline
+        ScoreBoard& registerPlayer& O(1) \\
+        \hline
+        ScoreBoard& checkPlayer&  O(1) \\
+        \hline
+        ScoreBoard& winRange& O(r(n+k)) \\
+        \hline
+        ScoreBoard& winSuccessor& O(n^{2}) \\\hline
+    \end{tabular}
+    \caption{Análisis Asintótico}
+    \label{tab:your_label_here}
+\end{table}
+
+\subsection{Ventajas y Desventajas}
+Una de las ventajas de la propuesta es la mantención de una estructura modular, generando así un código organizado en clases separadas con responsabilidades claras, agregar el uso de estructuras de datos adecuadas, con la implementación de un árbol binario de búsqueda (BST) para el manejo de los puntajes y una tabla hash para un acceso rápido a los jugadores.
+
+Como desventajas, se observa en el código una falta de validaciones en entradas del usuario como nombre de jugadores vacíos o repetidos, lo que podría generar errores críticos, es importante agregar que la tabla hash usada tiene una capacidad fija de 16, lo que causaría muchas colisiones con jugadores.
+
+\subsection{Desafíos}
+Implementación de \texttt{winSuccessor} en \texttt{Scoreboard}: Este método debía retornar los jugadores con el número de victorias inmediatamente superior al valor dado. La dificultad estuvo en manejar casos con múltiples jugadores en la misma clave de BST y cuando no existía un sucesor. Se resolvió combinando el método \texttt{findSuccessor} del BST con una búsqueda en la tabla hash para agrupar jugadores con victorias idénticas, garantizando que el resultado fuera un arreglo completo incluso con empates.
+
+\subsection{Extensión del Sistema}
+No se requiere un drástico cambio al código, sino agregar clases como ``Torneo", ``Ronda", ``Emparejamiento" y uno adicional como ``Puntaje". Los cuales permitirían un uso de forma ordenada para la realización de un torneo.
+
+Torneo: Se preguntaría el tipo de torneo (Por ejemplo: Eliminatoria Simple, Suizo, etc.) y se encargaría de gestionar las rondas. Esto permitiría manejar torneos con distintos formatos y números variables de enfrentamientos.
+
+Ronda: En esta clase se manejaría la inserción del ganador de cada ronda mediante un método, para avanzar a la siguiente. Además, se podría gestionar la variabilidad en las rondas, como ``Final de eliminación" o formatos tipo ``Mejor de N". También se podría incluir un temporizador para controlar los tiempos en cada partida.
+
+Puntaje: El uso de un sistema de clasificación para mantener una cuenta del \texttt{ELO} de algún jugador, otorgando puntuación dependiendo de lo sucedido en la partida, es decir, si un jugador gana la ronda se le otorga 3 puntos, si empatan 1 punto a cada jugador y si es derrotado 0 puntos para el participante, por ende también se necesitan criterios de desempate, como los resultados de enfrentamientos directo" o la diferencia en número de victorias.
+
+Emparejamiento: Estos emparejamientos podrían generarse aleatoriamente usando \texttt{rand} o se podría usar la información proporcionada en torno a su \texttt{ELO} para poder hacer un matchmaking equilibrado.
+
+\subsection{Estructura propuesta}
+Las propuestas respecto al reemplazo del BST sería el uso de un Treemap, lo cual nos permite un balanceo automático garantizando así operaciones eficientes además de soportes de concurrencia (Usando ``Collections.") y para reemplazar al HashSet el uso de un HashMap sería más apropiado debido a que este permite el redimensionamiento automático de su tamaño siendo así más accesible los torneos de una mayor cantidad de jugadores.
+
+\subsection{Pruebas}
+Para validar el funcionamiento del juego Conecta 4, se llevaron a cabo partidas interactivas entre distintos compañeros, lo que permitió evaluar tanto la lógica del sistema como la experiencia de usuario. Se verificaron varios aspectos como la alternancia de turnos, la detección de victorias en todas direcciones, el rechazo de jugadas inválidas y la correcta identificación de empates.
+
+\pagebreak
+\section{Conclusión}
+Esta experiencia nos permitió entender de mejor manera conceptos fundamentales en las estructuras de datos, como árboles binarios de búsqueda (BST) y tablas Hash (HashST), siendo usados en un sistema funcional (Conecta4). A través de la creación de las clases logramos organizar el código de manera modular, facilitando la escalabilidad y el mantenimiento.
+
+En base a la investigación y reflexión de esta experiencia concluimos que uno de los casos para implementar estas estructuras en la vida real sería en proyectos de videojuegos competitivos (Ej: Chess.com), en los cuales se usan estructuras específicas y personalizadas para rankings, o tablas hash que permiten manejar millones de perfiles e información de jugadores de manera controlada, algo muy importante al tratar con bases de datos.
+
+Si bien las estructuras de datos de java (TreeMap, HashMap) son una firme elección, este laboratorio nos incitó a priorizar el diseño según las necesidades otorgando espacio para pensar en una solución/opción óptima.
+
+\section{Enlace Relevante}
+\begin{itemize}
+    \item Repositorio GitHub: \url{https://github.com/tropikalcat/lab-5}
+\end{itemize}
+\end{document}
